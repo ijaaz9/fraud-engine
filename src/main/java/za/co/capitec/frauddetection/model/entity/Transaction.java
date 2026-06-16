@@ -22,6 +22,16 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Persisted representation of a transaction event.
+ *
+ * Every transaction that arrives via Kafka is stored here regardless of
+ * whether fraud was detected — this gives analysts a complete audit trail.
+ * Fraud flags are stored as a separate entity with a FK back to this record.
+ *
+ * The transactionId field (sourced from the Kafka event) is used as a
+ * natural unique key to ensure idempotent processing.
+ */
 @Entity
 @Getter
 @Setter
