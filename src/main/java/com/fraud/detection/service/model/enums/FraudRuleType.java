@@ -1,4 +1,4 @@
-package za.co.capitec.frauddetection.model.enums;
+package com.fraud.detection.service.model.enums;
 
 
 /**
@@ -16,6 +16,11 @@ public enum FraudRuleType {
     HIGH_AMOUNT,
     /** Transaction originated from a location anomalous relative to recent activity. */
     GEO_ANOMALY,
+    /**
+     * The speed implied by the distance between two consecutive transaction locations
+     * and the elapsed time between them is physically impossible.
+     */
+    IMPOSSIBLE_TRAVEL,
     /** A transaction with an identical amount + merchant was seen very recently for this user. */
     DUPLICATE_TRANSACTION
 }

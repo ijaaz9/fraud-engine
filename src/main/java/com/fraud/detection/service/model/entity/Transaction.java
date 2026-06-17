@@ -1,5 +1,4 @@
-package za.co.capitec.frauddetection.model.entity;
-
+package com.fraud.detection.service.model.entity;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
