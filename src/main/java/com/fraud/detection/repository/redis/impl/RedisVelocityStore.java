@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 @Slf4j
 @Repository
@@ -40,7 +40,7 @@ public class RedisVelocityStore implements VelocityStore {
         Long count = redisTemplate.opsForZSet().count(key, windowStartMillis, timestampMillis);
 
         // Reset the key TTL so it doesn't expire while the user is active
-        redisTemplate.expire(key, windowSeconds + TTL_BUFFER_SECONDS, TimeUnit.SECONDS);
+        redisTemplate.expire(key, Duration.ofSeconds(windowSeconds + TTL_BUFFER_SECONDS));
 
         long result = count != null ? count : 1L;
         log.debug("Velocity key [{}]: {} entries in window", key, result);

@@ -1,0 +1,69 @@
+# Test profile configuration.
+# Testcontainers overrides spring.datasource.url, spring.data.redis.host/port,
+# and spring.kafka.bootstrap-servers at runtime — so the values here are
+# placeholders that are never actually used during tests.
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/testdb
+    username: test
+    password: test
+
+  jpa:
+    hibernate:
+      # No Liquibase changelog exists in the project, so the integration test
+      # lets Hibernate generate the schema from the JPA entities and drop it
+      # afterwards. This keeps schema management self-contained to the test run.
+      ddl-auto: create-drop
+    show-sql: false
+
+  liquibase:
+    enabled: false
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  kafka:
+    # Used by Spring Boot's auto-configured KafkaTemplate (the @RetryableTopic
+    # producer that forwards to retry/DLT topics). Overridden by Testcontainers.
+    bootstrap-servers: localhost:9092
+
+fraud:
+  idempotency:
+    ttl-hours: 1
+
+  kafka:
+    # Used by the application's manual consumer factory (KafkaConsumerProperties).
+    # bootstrap-servers is overridden by Testcontainers at runtime.
+    bootstrap-servers: localhost:9092
+    group-id: fraud-detection-test-group
+    concurrency: 1
+    topic:
+      transactions: transactions-test
+
+  rules:
+    velocity:
+      threshold: 3         # Lower thresholds in tests for faster assertions
+      window-seconds: 60
+      score: 40
+    high-amount:
+      threshold: 1000
+      score: 30
+    geo-anomaly:
+      location-ttl-hours: 1
+      score: 15
+      distance-threshold-km: 500
+    impossible-travel:
+      max-speed-kmh: 1200
+      min-elapsed-seconds: 60
+      score: 60
+    duplicate:
+      window-seconds: 30
+      score: 25
+
+logging:
+  level:
+    com.frauddetection: DEBUG
+    org.springframework.kafka: WARN
