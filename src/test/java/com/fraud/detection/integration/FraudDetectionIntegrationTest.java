@@ -223,6 +223,36 @@ public class FraudDetectionIntegrationTest {
     }
 
     @Test
+    @DisplayName("impossible travel: should raise GEO_ANOMALY and IMPOSSIBLE_TRAVEL flags")
+    void impossibleTravelTransaction_shouldRaiseBothGeoFlags() throws Exception {
+        String userId = "user-travel-" + UUID.randomUUID();
+
+        // Transaction 1: Cape Town — establishes the location baseline in Redis
+        String firstTxnId = UUID.randomUUID().toString();
+        publishToKafka(buildEvent(firstTxnId, userId, new BigDecimal("100.00"),
+                -33.9249, 18.4241, "CT Cafe", Instant.parse("2026-01-01T10:00:00Z")));
+
+        // Wait for the first transaction to be fully processed before sending the second,
+        // so the geo-location snapshot is written to Redis when the second event arrives.
+        await().atMost(15, TimeUnit.SECONDS)
+                .untilAsserted(() -> assertThat(
+                        transactionRepository.existsByTransactionId(firstTxnId)
+                ).isTrue());
+
+        // Transaction 2: London, 30 minutes later (~9,670km, implied speed ~19,340 km/h)
+        String secondTxnId = UUID.randomUUID().toString();
+        publishToKafka(buildEvent(secondTxnId, userId, new BigDecimal("200.00"),
+                51.5074, -0.1278, "London Hotel", Instant.parse("2026-01-01T10:30:00Z")));
+
+        await().atMost(15, TimeUnit.SECONDS)
+                .untilAsserted(() -> {
+                    var flags = fraudFlagRepository.findAllByTransactionId(secondTxnId);
+                    assertThat(flags).anyMatch(f -> f.getRuleTriggered().name().equals("GEO_ANOMALY"));
+                    assertThat(flags).anyMatch(f -> f.getRuleTriggered().name().equals("IMPOSSIBLE_TRAVEL"));
+                });
+    }
+
+    @Test
     @DisplayName("REST API: GET /api/v1/flags returns flagged transactions")
     void restApi_getFlagsEndpoint_returnsFlaggedTransactions() throws Exception {
         String txnId = UUID.randomUUID().toString();
@@ -295,6 +325,11 @@ public class FraudDetectionIntegrationTest {
 
     private TransactionEvent buildEvent(String txnId, String userId, BigDecimal amount,
                                         double lat, double lon, String merchant) {
+        return buildEvent(txnId, userId, amount, lat, lon, merchant, Instant.now());
+    }
+
+    private TransactionEvent buildEvent(String txnId, String userId, BigDecimal amount,
+                                        double lat, double lon, String merchant, Instant timestamp) {
         return TransactionEvent.builder()
                 .transactionId(txnId)
                 .userId(userId)
@@ -303,7 +338,7 @@ public class FraudDetectionIntegrationTest {
                 .category("RETAIL")
                 .latitude(lat)
                 .longitude(lon)
-                .timestamp(Instant.now())
+                .timestamp(timestamp)
                 .build();
     }
 }

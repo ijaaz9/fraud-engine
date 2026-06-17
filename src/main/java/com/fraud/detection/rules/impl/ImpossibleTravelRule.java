@@ -8,12 +8,14 @@ import com.fraud.detection.rules.engine.FraudRule;
 import com.fraud.detection.rules.engine.RuleEvaluationResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
 @Slf4j
 @Component
+@Order(1) // Must run before GeoAnomalyRule — reads the previous location snapshot before GeoAnomalyRule overwrites it
 @RequiredArgsConstructor
 public class ImpossibleTravelRule implements FraudRule {
 

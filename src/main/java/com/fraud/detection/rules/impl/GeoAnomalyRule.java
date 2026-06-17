@@ -15,7 +15,7 @@ import java.util.Optional;
 
 @Slf4j
 @Component
-@Order(1) // Must run before ImpossibleTravelRule — writes the location snapshot that ImpossibleTravelRule reads
+@Order(2) // Must run after ImpossibleTravelRule — reads the previous snapshot for the distance check, then updates it for the next transaction
 @RequiredArgsConstructor
 public class GeoAnomalyRule implements FraudRule {
 

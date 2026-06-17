@@ -62,10 +62,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **`RedisGeoLocationStore`** updated to store and parse the three-field value.
   Includes a field-count guard to handle any stale two-field values gracefully.
 
-- **`GeoAnomalyRule`** annotated `@Order(1)` — must run before `ImpossibleTravelRule`
-  because it writes the updated location snapshot that `ImpossibleTravelRule` reads.
+- **`ImpossibleTravelRule`** annotated `@Order(1)` — must run before `GeoAnomalyRule`.
+  `GeoAnomalyRule` overwrites the stored location as its first step; if
+  `ImpossibleTravelRule` ran second it would always read the current transaction's
+  own coordinates, producing distance = 0 and speed = 0.
 
-- **`ImpossibleTravelRule`** annotated `@Order(2)`.
+- **`GeoAnomalyRule`** annotated `@Order(2)` — reads the previous snapshot for its
+  distance check, then writes the current coordinates for the next transaction.
 
 - **`GeoAnomalyRuleTest`** updated for the three-element Redis array, updated
   `updateLocation` signature, and rescored assertions (35 → 15).
@@ -131,6 +134,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   Velocity windows, geo-location snapshots, idempotency keys, and dedup markers
   persisted between tests, causing state bleed. All Redis keys are now flushed
   after each test.
+
+- **`ImpossibleTravelRule` never fired** — `GeoAnomalyRule` was annotated `@Order(1)`
+  and `ImpossibleTravelRule` `@Order(2)`. `GeoAnomalyRule` overwrites the stored
+  Redis location as its very first statement, so by the time `ImpossibleTravelRule`
+  ran it always read the current transaction's own coordinates — distance zero,
+  speed zero, rule silent. Fixed by swapping the `@Order` values: `ImpossibleTravelRule`
+  is now `@Order(1)`, `GeoAnomalyRule` `@Order(2)`.
 
 - **`TransactionEvent` missing constructors** — `@NoArgsConstructor` and
   `@AllArgsConstructor` added. Jackson requires a no-arg constructor to
@@ -231,4 +241,5 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **Integration test** (`FraudDetectionIntegrationTest`) using Testcontainers
   for Kafka, PostgreSQL, and Redis. Covers clean transaction, high-amount flag,
-  duplicate detection, idempotency, and REST API responses.
+  duplicate detection, idempotency, impossible travel (GEO_ANOMALY +
+  IMPOSSIBLE_TRAVEL compound), and REST API responses.

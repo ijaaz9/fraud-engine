@@ -11,9 +11,9 @@ spring:
 
   jpa:
     hibernate:
-      # No Liquibase changelog exists in the project, so the integration test
-      # lets Hibernate generate the schema from the JPA entities and drop it
-      # afterwards. This keeps schema management self-contained to the test run.
+      # Liquibase is disabled for tests — Hibernate generates the schema from
+      # the JPA entities and drops it afterwards. Faster than running migrations
+      # and keeps the test environment self-contained.
       ddl-auto: create-drop
     show-sql: false
 
@@ -65,5 +65,5 @@ fraud:
 
 logging:
   level:
-    com.frauddetection: DEBUG
+    com.fraud.detection: DEBUG
     org.springframework.kafka: WARN

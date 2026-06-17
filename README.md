@@ -104,7 +104,7 @@ Together, the scores compound:
 | Cape Town → London, 1hr | GeoAnomaly + ImpossibleTravel | 75 | HIGH |
 | Cape Town → London, 1hr + high amount | All three | 105 | CRITICAL |
 
-GeoAnomalyRule always runs before ImpossibleTravelRule (enforced via `@Order`) because GeoAnomalyRule writes the updated location snapshot that ImpossibleTravelRule reads. Both rules read the *previous* snapshot and the current event — no extra Redis round-trip is needed.
+ImpossibleTravelRule runs before GeoAnomalyRule (enforced via `@Order`). GeoAnomalyRule immediately overwrites the stored location with the current transaction's coordinates as its first step. ImpossibleTravelRule must therefore read the previous snapshot first — otherwise it would compare the current transaction against itself, producing a distance of zero and a speed of zero. GeoAnomalyRule runs second: it reads the same previous snapshot for its own distance check, then writes the current coordinates so the next transaction has a valid baseline. Both rules read the *previous* snapshot; only GeoAnomalyRule writes the updated one.
 
 ---
 
@@ -198,6 +198,16 @@ curl "http://localhost:8080/api/v1/flags/stats?from=2024-01-01T00:00:00Z&to=2024
 
 # Filter by merchant category
 curl "http://localhost:8080/api/v1/flags/stats?from=2024-01-01T00:00:00Z&to=2024-12-31T23:59:59Z&category=ELECTRONICS"
+```
+
+### 5. Demo mode
+
+```bash
+# Make the demo script executable
+chmod +x demo.sh
+
+# Run the demo script
+./demo.sh
 ```
 
 ---
