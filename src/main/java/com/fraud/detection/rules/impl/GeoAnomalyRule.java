@@ -2,6 +2,7 @@ package com.fraud.detection.rules.impl;
 
 import com.fraud.detection.model.enums.FraudRuleType;
 import com.fraud.detection.model.event.TransactionEvent;
+import com.fraud.detection.properties.FraudRuleProperties;
 import com.fraud.detection.repository.redis.GeoLocationStore;
 import com.fraud.detection.rules.engine.FraudRule;
 import com.fraud.detection.rules.engine.RuleEvaluationResult;
@@ -19,6 +20,7 @@ import java.util.Optional;
 public class GeoAnomalyRule implements FraudRule {
 
     private final GeoLocationStore geoLocationStore;
+    private final FraudRuleProperties properties;
 
     // Earth radius in km, used for Haversine calculation
     private static final double EARTH_RADIUS_KM = 6371.0;
@@ -40,7 +42,7 @@ public class GeoAnomalyRule implements FraudRule {
                 event.getLatitude(),
                 event.getLongitude(),
                 event.getTimestamp().toEpochMilli(),
-                locationTtlHours
+                properties.getGeoAnomaly().getLocationTtlHours()
         );
 
         if (lastLocation.isEmpty()) {
@@ -57,16 +59,16 @@ public class GeoAnomalyRule implements FraudRule {
         );
 
         log.debug("Geo anomaly check for user [{}]: distance from last location = {}km (threshold: {}km)",
-                event.getUserId(), String.format("%.1f", distanceKm), distanceThresholdKm);
+                event.getUserId(), String.format("%.1f", distanceKm), properties.getGeoAnomaly().getDistanceThresholdKm());
 
-        if (distanceKm > distanceThresholdKm) {
+        if (distanceKm > properties.getGeoAnomaly().getDistanceThresholdKm()) {
             String detail = String.format(
                     "Transaction location (%.4f, %.4f) is %.1f km from user's last known location " +
                             "(%.4f, %.4f) — threshold is %.0f km",
                     event.getLatitude(), event.getLongitude(), distanceKm,
-                    prev[0], prev[1], distanceThresholdKm
+                    prev[0], prev[1], properties.getGeoAnomaly().getDistanceThresholdKm()
             );
-            return RuleEvaluationResult.triggered(getRuleType(), ruleScore, detail);
+            return RuleEvaluationResult.triggered(getRuleType(), properties.getGeoAnomaly().getScore(), detail);
         }
 
         return RuleEvaluationResult.notTriggered(getRuleType());

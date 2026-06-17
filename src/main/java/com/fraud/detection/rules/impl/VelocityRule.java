@@ -2,6 +2,7 @@ package com.fraud.detection.rules.impl;
 
 import com.fraud.detection.model.enums.FraudRuleType;
 import com.fraud.detection.model.event.TransactionEvent;
+import com.fraud.detection.properties.FraudRuleProperties;
 import com.fraud.detection.repository.redis.VelocityStore;
 import com.fraud.detection.rules.engine.FraudRule;
 import com.fraud.detection.rules.engine.RuleEvaluationResult;
@@ -38,6 +39,7 @@ import org.springframework.stereotype.Component;
 public class VelocityRule implements FraudRule {
 
     private final VelocityStore velocityStore;
+    private final FraudRuleProperties properties;
 
     @Override
     public FraudRuleType getRuleType() {
@@ -49,18 +51,18 @@ public class VelocityRule implements FraudRule {
         long txnCount = velocityStore.recordAndCount(
                 event.getUserId(),
                 event.getTimestamp().toEpochMilli(),
-                windowSeconds
+                properties.getVelocity().getWindowSeconds()
         );
 
         log.debug("Velocity check for user [{}]: {} transactions in last {}s (threshold: {})",
-                event.getUserId(), txnCount, windowSeconds, threshold);
+                event.getUserId(), txnCount, properties.getVelocity().getWindowSeconds(), properties.getVelocity().getThreshold());
 
-        if (txnCount > threshold) {
+        if (txnCount > properties.getVelocity().getThreshold()) {
             String detail = String.format(
                     "%d transactions in the last %d seconds for user [%s] (threshold: %d)",
-                    txnCount, windowSeconds, event.getUserId(), threshold
+                    txnCount, properties.getVelocity().getWindowSeconds(), event.getUserId(), properties.getVelocity().getThreshold()
             );
-            return RuleEvaluationResult.triggered(getRuleType(), ruleScore, detail);
+            return RuleEvaluationResult.triggered(getRuleType(), properties.getVelocity().getScore(), detail);
         }
 
         return RuleEvaluationResult.notTriggered(getRuleType());
