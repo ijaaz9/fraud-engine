@@ -1,9 +1,10 @@
 package com.fraud.detection.config;
 
 import com.fraud.detection.model.event.TransactionEvent;
+import com.fraud.detection.properties.KafkaConsumerProperties;
+import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
@@ -43,22 +44,16 @@ import java.util.Map;
 @EnableKafka
 @EnableRetry
 @Configuration
+@RequiredArgsConstructor
 public class KafkaConfig {
 
-    @Value("${spring.kafka.bootstrap-servers}")
-    private String bootstrapServers;
-
-    @Value("${spring.kafka.consumer.group-id:fraud-detection-group}")
-    private String groupId;
-
-    @Value("${spring.kafka.listener.concurrency:3}")
-    private int concurrency;
+    private final KafkaConsumerProperties properties;
 
     @Bean
     public ConsumerFactory<String, TransactionEvent> consumerFactory() {
         Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, properties.getBootstrapServers());
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, properties.getGroupId());
 
         // Start from the earliest unread offset when the group has no committed offset.
         // In production you may prefer "latest" if you only care about new messages.
@@ -98,7 +93,7 @@ public class KafkaConfig {
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
 
         // Number of concurrent consumer threads — should match partition count
-        factory.setConcurrency(concurrency);
+        factory.setConcurrency(properties.getConcurrency());
 
         return factory;
     }
