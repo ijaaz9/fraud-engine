@@ -2,6 +2,7 @@ package com.fraud.detection.rules.impl;
 
 import com.fraud.detection.model.enums.FraudRuleType;
 import com.fraud.detection.model.event.TransactionEvent;
+import com.fraud.detection.properties.FraudRuleProperties;
 import com.fraud.detection.repository.redis.DeduplicationStore;
 import com.fraud.detection.rules.engine.FraudRule;
 import com.fraud.detection.rules.engine.RuleEvaluationResult;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 public class DuplicateTransactionRule implements FraudRule {
 
     private final DeduplicationStore deduplicationStore;
+    private final FraudRuleProperties properties;
 
     @Override
     public FraudRuleType getRuleType() {
@@ -30,7 +32,7 @@ public class DuplicateTransactionRule implements FraudRule {
                 event.getUserId(),
                 event.getMerchant(),
                 amountKey,
-                windowSeconds
+                properties.getDuplicate().getWindowSeconds()
         );
 
         log.debug("Duplicate check for user [{}] at merchant [{}] amount [{}]: duplicate={}",
@@ -40,9 +42,9 @@ public class DuplicateTransactionRule implements FraudRule {
             String detail = String.format(
                     "Duplicate transaction detected: user [%s] at merchant [%s] for amount %s " +
                             "within the last %d seconds",
-                    event.getUserId(), event.getMerchant(), amountKey, windowSeconds
+                    event.getUserId(), event.getMerchant(), amountKey, properties.getDuplicate().getWindowSeconds()
             );
-            return RuleEvaluationResult.triggered(getRuleType(), ruleScore, detail);
+            return RuleEvaluationResult.triggered(getRuleType(), properties.getDuplicate().getScore(), detail);
         }
 
         return RuleEvaluationResult.notTriggered(getRuleType());

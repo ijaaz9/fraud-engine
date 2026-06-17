@@ -2,6 +2,7 @@ package com.fraud.detection.rules.impl;
 
 import com.fraud.detection.model.enums.FraudRuleType;
 import com.fraud.detection.model.event.TransactionEvent;
+import com.fraud.detection.properties.FraudRuleProperties;
 import com.fraud.detection.repository.redis.GeoLocationStore;
 import com.fraud.detection.rules.engine.FraudRule;
 import com.fraud.detection.rules.engine.RuleEvaluationResult;
@@ -17,6 +18,7 @@ import java.util.Optional;
 public class ImpossibleTravelRule implements FraudRule {
 
     private final GeoLocationStore geoLocationStore;
+    private final FraudRuleProperties properties;
 
     @Override
     public FraudRuleType getRuleType() {
@@ -53,9 +55,9 @@ public class ImpossibleTravelRule implements FraudRule {
         long elapsedSeconds = elapsedMillis / 1000;
 
         // Guard: transactions too close in time produce unreliable speed estimates.
-        if (elapsedSeconds < minElapsedSeconds) {
+        if (elapsedSeconds < properties.getImpossibleTravel().getMinElapsedSeconds()) {
             log.debug("Elapsed time {}s is below minimum {}s for user [{}] — skipping speed check",
-                    elapsedSeconds, minElapsedSeconds, event.getUserId());
+                    elapsedSeconds, properties.getImpossibleTravel().getMinElapsedSeconds(), event.getUserId());
             return RuleEvaluationResult.notTriggered(getRuleType());
         }
 
@@ -71,9 +73,9 @@ public class ImpossibleTravelRule implements FraudRule {
                 String.format("%.1f", distanceKm),
                 elapsedSeconds,
                 String.format("%.1f", impliedSpeedKmh),
-                maxSpeedKmh);
+                properties.getImpossibleTravel().getMaxSpeedKmh());
 
-        if (impliedSpeedKmh > maxSpeedKmh) {
+        if (impliedSpeedKmh > properties.getImpossibleTravel().getMaxSpeedKmh()) {
             String detail = String.format(
                     "Implied travel speed of %.0f km/h between (%.4f, %.4f) and (%.4f, %.4f) " +
                             "over %d seconds (%.0f km) exceeds maximum plausible speed of %.0f km/h",
@@ -82,9 +84,9 @@ public class ImpossibleTravelRule implements FraudRule {
                     event.getLatitude(), event.getLongitude(),
                     elapsedSeconds,
                     distanceKm,
-                    maxSpeedKmh
+                    properties.getImpossibleTravel().getMaxSpeedKmh()
             );
-            return RuleEvaluationResult.triggered(getRuleType(), ruleScore, detail);
+            return RuleEvaluationResult.triggered(getRuleType(), properties.getImpossibleTravel().getScore(), detail);
         }
 
         return RuleEvaluationResult.notTriggered(getRuleType());

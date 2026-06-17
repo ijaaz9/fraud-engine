@@ -33,4 +33,3 @@ public interface GeoLocationStore {
     void updateLocation(String userId, double latitude, double longitude,
                         long timestampMillis, long ttlHours);
 }
-}
