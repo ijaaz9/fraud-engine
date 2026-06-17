@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="001-create-transactions-table" author="fraud-detection">
+        <comment>
+            Creates the transactions table. Every Kafka event is persisted here
+            for a complete audit trail, regardless of whether fraud was detected.
+        </comment>
+
+        <createTable tableName="transactions">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <!-- External transaction ID from the source system (idempotency key) -->
+            <column name="transaction_id" type="VARCHAR(128)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+
+            <column name="user_id" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- NUMERIC(19,4) safely handles all currency amounts without floating-point errors -->
+            <column name="amount" type="NUMERIC(19,4)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="merchant" type="VARCHAR(256)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="category" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="latitude" type="DOUBLE PRECISION">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="longitude" type="DOUBLE PRECISION">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- When the transaction actually occurred (from the source event) -->
+            <column name="timestamp" type="TIMESTAMPTZ">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- When this record was written to the database -->
+            <column name="processed_at" type="TIMESTAMPTZ">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- Support fast user-based lookups (velocity queries, history) -->
+        <createIndex tableName="transactions" indexName="idx_transactions_user_id">
+            <column name="user_id"/>
+        </createIndex>
+
+        <!-- Support time-range queries in the stats API -->
+        <createIndex tableName="transactions" indexName="idx_transactions_timestamp">
+            <column name="timestamp"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+        Master changelog — includes all migration files in order.
+
+        Rules:
+          - Never modify a changeset that has already been applied to any environment.
+          - New schema changes always go in a new numbered file.
+          - Each changeset has a unique id + author combination.
+    -->
+
+    <include file="db/changelog/001-create-transactions-table.xml"/>
+    <include file="db/changelog/002-create-fraud-flags-table.xml"/>
+
+</databaseChangeLog>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="002-create-fraud-flags-table" author="fraud-detection">
+        <comment>
+            Creates the fraud_flags table. One row is inserted per fraud rule
+            that fires on a transaction, giving a full per-rule audit trail.
+        </comment>
+
+        <createTable tableName="fraud_flags">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <!-- FK to the transactions table -->
+            <column name="transaction_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_fraud_flags_transaction"
+                             references="transactions(id)"
+                             deleteCascade="true"/>
+            </column>
+
+            <!-- Which rule fired — maps to the FraudRuleType enum -->
+            <column name="rule_triggered" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Overall transaction severity (derived from sum of all rule scores) -->
+            <column name="severity" type="VARCHAR(16)">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Aggregate score at the time this flag was created -->
+            <column name="score" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Human-readable explanation of why this rule fired -->
+            <column name="detail" type="VARCHAR(512)">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Lifecycle status: OPEN | REVIEWED -->
+            <column name="status" type="VARCHAR(16)" defaultValue="OPEN">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMPTZ">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- Used by GET /api/v1/flags/{transactionId} -->
+        <createIndex tableName="fraud_flags" indexName="idx_fraud_flags_transaction_id">
+            <column name="transaction_id"/>
+        </createIndex>
+
+        <!-- Used by GET /api/v1/flags?status=OPEN -->
+        <createIndex tableName="fraud_flags" indexName="idx_fraud_flags_status">
+            <column name="status"/>
+        </createIndex>
+
+        <!-- Used by GET /api/v1/flags/stats?from=...&to=... -->
+        <createIndex tableName="fraud_flags" indexName="idx_fraud_flags_created_at">
+            <column name="created_at"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>
