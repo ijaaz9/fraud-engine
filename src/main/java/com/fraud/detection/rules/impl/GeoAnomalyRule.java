@@ -84,7 +84,7 @@ public class GeoAnomalyRule implements FraudRule {
      * @param lon2 longitude of point 2 (decimal degrees)
      * @return distance in kilometres
      */
-    static double haversineDistanceKm(double lat1, double lon1, double lat2, double lon2) {
+    public static double haversineDistanceKm(double lat1, double lon1, double lat2, double lon2) {
         double dLat = Math.toRadians(lat2 - lat1);
         double dLon = Math.toRadians(lon2 - lon1);
 

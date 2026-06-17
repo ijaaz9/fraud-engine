@@ -1,6 +1,22 @@
 package com.fraud.detection.rules;
 
+import com.fraud.detection.model.enums.FraudRuleType;
+import com.fraud.detection.model.event.TransactionEvent;
+import com.fraud.detection.rules.engine.FraudRule;
+import com.fraud.detection.rules.engine.FraudRuleEngine;
+import com.fraud.detection.rules.engine.RuleEvaluationResult;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @DisplayName("FraudRuleEngine")
 class FraudRuleEngineTest {

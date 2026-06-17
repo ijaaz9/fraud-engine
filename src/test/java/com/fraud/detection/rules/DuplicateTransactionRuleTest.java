@@ -1,5 +1,28 @@
 package com.fraud.detection.rules;
 
+import com.fraud.detection.model.enums.FraudRuleType;
+import com.fraud.detection.model.event.TransactionEvent;
+import com.fraud.detection.properties.FraudRuleProperties;
+import com.fraud.detection.repository.redis.DeduplicationStore;
+import com.fraud.detection.rules.engine.RuleEvaluationResult;
+import com.fraud.detection.rules.impl.DuplicateTransactionRule;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 @DisplayName("DuplicateTransactionRule")
 @ExtendWith(MockitoExtension.class)
 class DuplicateTransactionRuleTest {
@@ -7,13 +30,14 @@ class DuplicateTransactionRuleTest {
     @Mock
     private DeduplicationStore deduplicationStore;
 
-    @InjectMocks
     private DuplicateTransactionRule rule;
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(rule, "windowSeconds", 120L);
-        ReflectionTestUtils.setField(rule, "ruleScore", 25);
+        FraudRuleProperties properties = new FraudRuleProperties();
+        properties.getDuplicate().setWindowSeconds(120L);
+        properties.getDuplicate().setScore(25);
+        rule = new DuplicateTransactionRule(deduplicationStore, properties);
     }
 
     @Test

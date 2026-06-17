@@ -2,16 +2,16 @@ package com.fraud.detection.rules;
 
 import com.fraud.detection.model.enums.FraudRuleType;
 import com.fraud.detection.model.event.TransactionEvent;
+import com.fraud.detection.properties.FraudRuleProperties;
 import com.fraud.detection.repository.redis.GeoLocationStore;
 import com.fraud.detection.rules.engine.RuleEvaluationResult;
 import com.fraud.detection.rules.impl.GeoAnomalyRule;
-import org.junit.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -31,7 +31,6 @@ class GeoAnomalyRuleTest {
     @Mock
     private GeoLocationStore geoLocationStore;
 
-    @InjectMocks
     private GeoAnomalyRule rule;
 
     // London coordinates
@@ -48,9 +47,11 @@ class GeoAnomalyRuleTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(rule, "distanceThresholdKm", 500.0);
-        ReflectionTestUtils.setField(rule, "locationTtlHours", 24L);
-        ReflectionTestUtils.setField(rule, "ruleScore", 15); // updated score
+        FraudRuleProperties properties = new FraudRuleProperties();
+        properties.getGeoAnomaly().setDistanceThresholdKm(500.0);
+        properties.getGeoAnomaly().setLocationTtlHours(24L);
+        properties.getGeoAnomaly().setScore(15);
+        rule = new GeoAnomalyRule(geoLocationStore, properties);
     }
 
     @Test
