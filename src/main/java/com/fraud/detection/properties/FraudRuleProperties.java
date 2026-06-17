@@ -8,6 +8,7 @@ import com.fraud.detection.properties.rules.Velocity;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.stereotype.Component;
 
 /**
@@ -32,9 +33,18 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "fraud.rules")
 public class FraudRuleProperties {
 
-    private Velocity velocity;
-    private HighAmount highAmount;
-    private GeoAnomaly geoAnomaly;
-    private Duplicate duplicate;
-    private ImpossibleTravel impossibleTravel;
+    @NestedConfigurationProperty
+    private Velocity velocity = new Velocity();
+
+    @NestedConfigurationProperty
+    private HighAmount highAmount = new HighAmount();
+
+    @NestedConfigurationProperty
+    private GeoAnomaly geoAnomaly = new GeoAnomaly();
+
+    @NestedConfigurationProperty
+    private Duplicate duplicate = new Duplicate();
+
+    @NestedConfigurationProperty
+    private ImpossibleTravel impossibleTravel = new ImpossibleTravel();
 }

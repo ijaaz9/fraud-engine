@@ -4,6 +4,7 @@ import com.fraud.detection.model.entity.FraudFlag;
 import com.fraud.detection.model.entity.Transaction;
 import com.fraud.detection.model.enums.FlagStatus;
 import com.fraud.detection.model.event.TransactionEvent;
+import com.fraud.detection.properties.IdempotencyProperties;
 import com.fraud.detection.repository.postgres.FraudFlagRepository;
 import com.fraud.detection.repository.postgres.TransactionRepository;
 import com.fraud.detection.repository.redis.IdempotencyStore;
@@ -13,7 +14,6 @@ import com.fraud.detection.scoring.ScoreAggregation;
 import com.fraud.detection.scoring.SeverityScoreAggregator;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -55,10 +55,7 @@ public class FraudDetectionService {
     private final TransactionRepository transactionRepository;
     private final FraudFlagRepository fraudFlagRepository;
     private final FraudMetricsService metricsService;
-
-    /** How long to retain the idempotency marker in Redis (should cover max Kafka redelivery window). */
-    @Value("${fraud.idempotency.ttl-hours:24}")
-    private long idempotencyTtlHours;
+    private final IdempotencyProperties idempotencyProperties;
 
     /**
      * Processes a single transaction event through the full fraud detection pipeline.
@@ -83,7 +80,7 @@ public class FraudDetectionService {
         // === Step 1: Idempotency guard ===
         // Redis SET NX ensures we skip duplicate Kafka deliveries without
         // needing a DB round-trip on the hot path.
-        if (!idempotencyStore.isNewAndMark(event.getTransactionId(), idempotencyTtlHours)) {
+        if (!idempotencyStore.isNewAndMark(event.getTransactionId(), idempotencyProperties.getTtlHours())) {
             log.warn("Transaction [{}] already processed — skipping", event.getTransactionId());
             return;
         }
