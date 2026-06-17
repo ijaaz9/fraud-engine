@@ -42,23 +42,60 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 /**
- * End-to-end integration test covering the full pipeline:
- *   Kafka producer → consumer → fraud rules → PostgreSQL → REST API
+ * Integration test suite for the Fraud Detection service.
  *
- * Uses Testcontainers to spin up real instances of Kafka, PostgreSQL, and Redis
- * so that tests reflect production behaviour as closely as possible. The REST
- * layer is exercised over real HTTP via {@link TestRestTemplate} against the
- * randomly-assigned server port.
+ * <p>This test class validates the end-to-end behaviour of the fraud detection pipeline,
+ * including Kafka ingestion, rule evaluation, persistence, Redis state handling, and REST API exposure.</p>
  *
- * @DynamicPropertySource wires the container connection details into the
- * Spring application context before beans are initialised.
+ * <h2>Test Environment</h2>
+ * <p>The test runs in a fully isolated environment using Testcontainers:</p>
+ * <ul>
+ *     <li>PostgreSQL (database persistence)</li>
+ *     <li>Kafka (event ingestion)</li>
+ *     <li>Redis (stateful fraud signals such as velocity checks and geo tracking)</li>
+ * </ul>
  *
- * Awaitility is used to poll for async Kafka consumer results rather than
- * using fragile Thread.sleep() calls.
+ * <p>Spring Boot is started on a random port and wired to containerized infrastructure
+ * via {@code @DynamicPropertySource}.</p>
  *
- * The class is annotated {@code @Testcontainers(disabledWithoutDocker = true)}
- * so the whole suite is cleanly skipped (not failed) on machines/CI agents
- * without a Docker daemon, and runs in full where Docker is available.
+ * <h2>Coverage</h2>
+ * <ul>
+ *     <li>Transaction ingestion via Kafka</li>
+ *     <li>Fraud rule evaluation (high amount, duplicate detection, geo anomalies)</li>
+ *     <li>Idempotency guarantees under at-least-once delivery</li>
+ *     <li>Stateful detection using Redis (velocity, geo baselines)</li>
+ *     <li>REST API correctness for flagged transactions</li>
+ * </ul>
+ *
+ * <h2>Isolation Strategy</h2>
+ * <p>Each test is isolated by clearing both relational and cache state:</p>
+ * <ul>
+ *     <li>All PostgreSQL tables are truncated between tests</li>
+ *     <li>Redis is fully cleared to avoid cross-test contamination of stateful rules</li>
+ * </ul>
+ *
+ * <h2>Kafka Behavior</h2>
+ * <p>Events are published directly to a Testcontainers-managed Kafka broker using a
+ * real Kafka producer. The application consumes from a dedicated test topic.</p>
+ *
+ * <h2>Asynchronous Processing</h2>
+ * <p>Assertions use Awaitility to account for asynchronous processing within the consumer
+ * and rule engine pipeline.</p>
+ *
+ * <h2>Key Validations</h2>
+ * <ul>
+ *     <li>Clean transactions are persisted without fraud flags</li>
+ *     <li>High-value transactions trigger HIGH_AMOUNT rules</li>
+ *     <li>Repeated transactions trigger DUPLICATE_TRANSACTION rules</li>
+ *     <li>Duplicate Kafka messages are processed idempotently</li>
+ *     <li>Geo-anomalies and impossible travel scenarios are detected using Redis state</li>
+ *     <li>REST endpoints reflect persisted fraud decisions correctly</li>
+ * </ul>
+ *
+ * <h2>Design Notes</h2>
+ * <p>This test suite intentionally uses real infrastructure components instead of mocks
+ * to validate production-like behaviour, including serialization, message delivery,
+ * transaction boundaries, and rule evaluation correctness.</p>
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers(disabledWithoutDocker = true)
