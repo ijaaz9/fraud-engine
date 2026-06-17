@@ -1,4 +1,4 @@
-package za.co.capitec.frauddetection.model.enums;
+package com.fraud.detection.service.model.enums;
 
 /**
  * Represents the overall fraud severity level assigned to a transaction

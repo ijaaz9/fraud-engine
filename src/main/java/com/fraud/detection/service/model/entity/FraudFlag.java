@@ -1,4 +1,4 @@
-package za.co.capitec.frauddetection.model.entity;
+package com.fraud.detection.service.model.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -17,12 +17,23 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import za.co.capitec.frauddetection.model.enums.FlagStatus;
-import za.co.capitec.frauddetection.model.enums.FraudRuleType;
-import za.co.capitec.frauddetection.model.enums.Severity;
+import com.fraud.detection.service.model.enums.FlagStatus;
+import com.fraud.detection.service.model.enums.FraudRuleType;
+import com.fraud.detection.service.model.enums.Severity;
 
 import java.time.Instant;
 
+/**
+ * Records a single fraud rule violation against a transaction.
+ *
+ * One FraudFlag is created per rule that fires. If three rules fire on a
+ * single transaction, three FraudFlag rows are inserted. This design allows
+ * analysts to understand exactly which rules triggered and why, rather than
+ * receiving only a summary score.
+ *
+ * The {@code severity} on each flag reflects the overall transaction severity
+ * (sum of all rule scores) — consistent across all flags for the same txn.
+ */
 @Entity
 @Getter
 @Setter

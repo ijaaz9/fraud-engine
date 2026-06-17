@@ -1,10 +1,12 @@
-package za.co.capitec.frauddetection.model.event;
+package com.fraud.detection.service.model.event;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -13,7 +15,7 @@ import java.time.Instant;
  * Represents the raw transaction event as consumed from the Kafka topic.
  *
  * This is the inbound DTO — it is validated on receipt and then mapped to
- * the {@link za.co.capitec.frauddetection.model.entity.Transaction} JPA entity for
+ * the {@link com.fraud.detection.service.model.entity.Transaction} JPA entity for
  * persistence. Keeping the event model separate from the entity ensures
  * that changes to the Kafka schema do not force changes to the database
  * schema and vice versa (Single Responsibility Principle).
@@ -30,39 +32,42 @@ import java.time.Instant;
  *   "timestamp":     "2024-03-15T10:30:00Z"
  * }
  */
+@Getter
+@Setter
 @Builder
-public record TransactionEvent(
+public class TransactionEvent {
 
+        /** Globally unique identifier for this transaction — used for idempotency. */
         @NotBlank(message = "transactionId must not be blank")
-        String transactionId,
+        private String transactionId;
 
         /** The user who initiated the transaction. */
-        @NotBlank(message = "userId must not be blank") 
-        String userId,
+        @NotBlank(message = "userId must not be blank")
+        private String userId;
 
         /** Transaction amount in the merchant's currency. */
         @NotNull(message = "amount must not be null")
         @DecimalMin(value = "0.0", inclusive = false, message = "amount must be positive")
-        BigDecimal amount,
+        private BigDecimal amount;
 
         /** Name or identifier of the merchant. */
         @NotBlank(message = "merchant must not be blank")
-        String merchant,
+        private String merchant;
 
         /** Business category of the merchant (e.g. ELECTRONICS, TRAVEL). */
         @NotBlank(message = "category must not be blank")
-        String category,
+        private String category;
 
         /** Geographic latitude of the transaction origin. */
         @NotNull(message = "latitude must not be null")
-        Double latitude,
+        private Double latitude;
 
         /** Geographic longitude of the transaction origin. */
         @NotNull(message = "longitude must not be null")
-        Double longitude,
-        
+        private Double longitude;
+
         /** When the transaction occurred, in UTC. */
         @NotNull(message = "timestamp must not be null")
         @JsonFormat(shape = JsonFormat.Shape.STRING)
-        Instant timestamp
-) { }
+        private Instant timestamp;
+}

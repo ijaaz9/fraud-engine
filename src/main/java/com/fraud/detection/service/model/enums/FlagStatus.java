@@ -1,4 +1,4 @@
-package za.co.capitec.frauddetection.model.enums;
+package com.fraud.detection.service.model.enums;
 
 /**
  * Lifecycle status of a FraudFlag once it has been raised.
