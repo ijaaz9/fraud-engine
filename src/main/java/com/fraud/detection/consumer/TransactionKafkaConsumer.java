@@ -69,7 +69,7 @@ public class TransactionKafkaConsumer {
     )
     @KafkaListener(
             topics = "${fraud.kafka.topic.transactions:transactions}",
-            groupId = "${spring.kafka.consumer.group-id:fraud-detection-group}",
+            groupId = "${fraud.kafka.group-id:fraud-detection-group}",
             containerFactory = "kafkaListenerContainerFactory"
     )
     public void onTransaction(
@@ -108,7 +108,7 @@ public class TransactionKafkaConsumer {
      */
     @KafkaListener(
             topics = "${fraud.kafka.topic.transactions:transactions}-dlt",
-            groupId = "${spring.kafka.consumer.group-id:fraud-detection-group}-dlt"
+            groupId = "${fraud.kafka.group-id:fraud-detection-group}-dlt"
     )
     public void onDeadLetter(
             ConsumerRecord<String, String> record,
